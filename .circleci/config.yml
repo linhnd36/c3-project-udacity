@@ -79,9 +79,9 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=
       - slack/notify:
-          branch_pattern: main
+          channel: $SLACK_DEFAULT_CHANNEL
           event: fail
-          template: basic_fail_1            
+          template: basic_fail_1          
 
   scan-backend:
     docker:
@@ -98,7 +98,7 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
       - slack/notify:
-          branch_pattern: main
+          channel: $SLACK_DEFAULT_CHANNEL
           event: fail
           template: basic_fail_1
 
@@ -113,5 +113,7 @@ workflows:
           requires: [build-backend]      
       - scan-backend:
           requires: [build-backend]
+          context: $SLACK_ACCESS_TOKEN
       - scan-frontend:
-          requires: [build-frontend]          
+          requires: [build-frontend]
+          context: $SLACK_ACCESS_TOKEN    
