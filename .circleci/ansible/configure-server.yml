@@ -13,7 +13,7 @@
     - ansible_stdout_callback: yaml
 
   pre_tasks:
-    - name: "wait 600 seconds for target connection to become reachable/usable."
+    - name: "wait 180 seconds for target connection to become reachable/usable."
       # Your code here
       ansible.builtin.wait_for_connection:
         timeout: 180
@@ -34,4 +34,4 @@
   roles:
     # Your code here
     - configure-server
-    - configure-prometheus-node-exporter    
+    - configure-prometheus-node-exporter
