@@ -207,12 +207,159 @@ jobs:
             cd .circleci/ansible
             /usr/bin/ansible-playbook -i inventory.txt configure-server.yml
      # Here's where you will add some code to rollback on failure
+      # - destroy-environment:
+      #     description: backend
+      #     stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      # - destroy-environment:
+      #     description: frontend
+      #     stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"                       
+
+  run-migrations:
+    docker:
+      # Docker image here that supports NodeJS
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      - checkout
+      - restore_cache:
+          keys: [run-migrations]
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            npm install
+            # Run and save the migration output
+            npm run migrations > migrations_dump.txt
+      - run:
+          name: Send migration results to selfhosted lucid
+          command: |
+            # Your code here
+            cat ~/project/backend/migrations_dump.txt
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+              curl https://kvdb.io/Eu3vcmjpauPZJaB1fPxa87/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            fi
+      - save_cache:
+          paths: [backend/node_modules]
+          key: run-migrations
+     # Here's where you will add some code to rollback on failure
+      - install-awscli
+      # - destroy-environment:
+      #     description: backend
+      #     stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      # - destroy-environment:
+      #     description: frontend
+      #     stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" 
+
+  deploy-frontend:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      - checkout
+      - restore_cache:
+          keys: [deploy-frontend]
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+            export BACKEND_IP=$(aws cloudformation describe-stacks \
+             --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
+             --query 'Stacks[0].Outputs[?OutputKey==`BackendIP`].OutputValue' \
+             --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            touch frontend/.env
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            # your code here
+            cd frontend
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - save_cache:
+          paths: [frontend/node_modules]
+          key: deploy-frontend
+      # Here's where you will add some code to rollback on failure      
+      - revert-migrations
+      # - destroy-environment:
+      #     description: backend
+      #     stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      # - destroy-environment:
+      #     description: frontend
+      #     stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+
+  deploy-backend:
+    docker:
+      # Docker image here that supports Ansible
+      # - image: circleci/node:13.8.0
+      - image: "amazon/aws-cli:latest"
+    steps:
+      - checkout
+      # Add ssh keys with fingerprint
+      - add_ssh_keys: 
+          fingerprints:
+            - "be:a0:be:46:ca:35:c7:7a:db:2c:aa:a3:52:d1:63:6b"
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            yum install -y wget
+            wget http://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
+            rpm -ivh epel-release-7-14.noarch.rpm
+            yum clean expire-cache
+            yum install -y ansible python3 tar gzip
+            ansible --version
+      - attach_workspace:
+          at: /tmp
+      - restore_cache:
+          keys: [deploy-backend]
+      - run:
+          name: Deploy backend
+          command: |
+            # your code here
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install 13.8.0
+            npm -v
+            node -v
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir .circleci/ansible/roles/deploy-backend/files
+            mv artifact.tar.gz .circleci/ansible/roles/deploy-backend/files
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cp /tmp/workspace/inventory.txt .
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      - save_cache:
+          paths: [backend/node_modules]
+          key: deploy-backend
+      # Here's where you will add some code to rollback on failure  
+      - revert-migrations
+      # - install-awscli
       - destroy-environment:
           description: backend
           stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
       - destroy-environment:
           description: frontend
-          stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"                       
+          stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
 
 workflows:
   default:
@@ -234,3 +381,9 @@ workflows:
               only: [master]   
       - configure-infrastructure:
           requires: [deploy-infrastructure]                     
+      # - run-migrations:
+      #     requires: [configure-infrastructure]
+      # - deploy-frontend:
+      #     requires: [run-migrations]          
+      # - deploy-backend:
+      #     requires: [run-migrations]          
