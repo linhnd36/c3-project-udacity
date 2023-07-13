@@ -1,4 +1,26 @@
 version: 2.1
+
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      # Add parameter here
+      description:
+        type: string
+        description: the environment stack to destroy
+      stack-name:
+        type: string
+        description: Name of the stack to destroy
+    steps:
+      - run:
+          name: Destroy << parameters.description >> environments
+          when: on_fail
+          command: |
+            if [[ << parameters.description >> == *"frontend"* ]];
+            then
+              aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            fi
+            aws cloudformation delete-stack --stack-name << parameters.stack-name >>
        
 jobs:
   build-frontend:
@@ -95,6 +117,60 @@ jobs:
             npm audit fix --force
             npm audit --audit-level=critical
 
+  deploy-infrastructure:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli:latest
+    steps:
+      # Checkout code from git
+      - checkout
+      - restore_cache:
+          keys: [deploy-infrastructure]
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            aws cloudformation describe-stacks \
+             --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
+             --query 'Stacks[0].Outputs[?OutputKey==`BackendIP`].OutputValue' \
+             --output text >> /root/project/.circleci/ansible/inventory.txt
+            mkdir -m 777 -p /tmp/workspace && cp /root/project/.circleci/ansible/inventory.txt /tmp/workspace
+      - run:
+          name: Install tar utility
+          command: |
+            yum install -y tar gzip
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - workspace
+      - run:
+          name: checking persist
+          command: |
+            ls -la /tmp/workspace/inventory.txt
+            cat /tmp/workspace/inventory.txt
+      # Here's where you will add some code to rollback on failure      
+      - destroy-environment:
+          description: backend
+          stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          description: frontend
+          stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"                
+
 workflows:
   default:
     jobs:
@@ -108,3 +184,8 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend] 
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+            branches:
+              only: [master]          
