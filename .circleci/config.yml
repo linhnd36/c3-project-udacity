@@ -173,14 +173,13 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: "amazon/aws-cli:latest"
+      - image: "python:3.7-alpine3.11"
     steps:
       - checkout
       - restore_cache:
           keys: [configure-infrastructure]
-      - add_ssh_keys: 
-          fingerprints:
-            - "ef:83:c0:8f:8e:b2:51:ce:b2:f9:f8:b7:b2:c2:8d:e2"
+      - add_ssh_keys:
+          fingerprints: ["ef:83:c0:8f:8e:b2:51:ce:b2:f9:f8:b7:b2:c2:8d:e2"]
       - run:
           name: Install dependencies
           command: |
@@ -190,10 +189,11 @@ jobs:
             rpm -ivh epel-release-7-14.noarch.rpm
             yum clean expire-cache
             yum install -y ansible python3 tar gzip
-            python3 -m pip -V
-            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-            python3 get-pip.py --user
-            python3 -m pip install ansible
+            apk add --update ansible
+            # python3 -m pip -V
+            # curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+            # python3 get-pip.py --user
+            # python3 -m pip install ansible
       # attach workspace
       - attach_workspace:
           at: /tmp      
