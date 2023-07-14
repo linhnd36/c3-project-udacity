@@ -173,27 +173,27 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: "python:3.7-alpine3.11"
+      - image: "amazon/aws-cli:latest"
     steps:
       - checkout
       - restore_cache:
           keys: [configure-infrastructure]
-      - add_ssh_keys:
-          fingerprints: ["5b:c9:d2:62:d5:0b:60:4c:ba:ec:cb:3a:b9:bc:71:23"]
+      - add_ssh_keys: 
+          fingerprints:
+            - "5b:c9:d2:62:d5:0b:60:4c:ba:ec:cb:3a:b9:bc:71:23"
       - run:
           name: Install dependencies
           command: |
             # Your code here
-            # yum install -y wget
-            # wget http://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
-            # rpm -ivh epel-release-7-14.noarch.rpm
-            # yum clean expire-cache
-            # yum install -y ansible python3 tar gzip
-            apk add --update ansible
-            # python3 -m pip -V
-            # curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-            # python3 get-pip.py --user
-            # python3 -m pip install ansible
+            yum install -y wget
+            wget http://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-14.noarch.rpm
+            rpm -ivh epel-release-7-14.noarch.rpm
+            yum clean expire-cache
+            yum install -y ansible python3 tar gzip
+            python3 -m pip -V
+            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+            python3 get-pip.py --user
+            python3 -m pip install ansible
       # attach workspace
       - attach_workspace:
           at: /tmp      
@@ -205,7 +205,7 @@ jobs:
             && cp /tmp/workspace/inventory.txt .circleci/ansible/ \
             && cat .circleci/ansible/inventory.txt
             cd .circleci/ansible
-            /usr/bin/ansible-playbook -i inventory.txt configure-server.yml
+            ansible-playbook -i inventory.txt configure-server.yml
      # Here's where you will add some code to rollback on failure
       # - destroy-environment:
       #     description: backend
