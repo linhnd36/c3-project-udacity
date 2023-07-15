@@ -282,7 +282,7 @@ jobs:
       - run:
           name: Send migration results to selfhosted lucid
           command: |
-            # Your code here
+            # Your code here 
             cat ~/project/backend/migrations_dump.txt
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
