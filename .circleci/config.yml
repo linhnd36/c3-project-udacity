@@ -356,7 +356,6 @@ jobs:
       - image: "amazon/aws-cli:latest"
     steps:
       - checkout
-      # Add ssh keys with fingerprint 
       - add_ssh_keys: 
           fingerprints:
             - "ef:83:c0:8f:8e:b2:51:ce:b2:f9:f8:b7:b2:c2:8d:e2"
@@ -372,8 +371,6 @@ jobs:
             ansible --version
       - attach_workspace:
           at: /tmp
-      - restore_cache:
-          keys: [deploy-backend]
       - run:
           name: Deploy backend
           command: |
@@ -397,18 +394,15 @@ jobs:
             cp /tmp/workspace/inventory.txt .
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      - save_cache:
-          paths: [backend/node_modules]
-          key: deploy-backend
       # Here's where you will add some code to rollback on failure  
       # - revert-migrations
       # - install-awscli
-      # - destroy-environment:
-      #     description: backend
-      #     stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
-      # - destroy-environment:
-      #     description: frontend
-      #     stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          description: backend
+          stack-name: "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          description: frontend
+          stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
 
   smoke-test:
     docker:
