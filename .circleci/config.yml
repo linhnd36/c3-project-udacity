@@ -196,7 +196,7 @@ jobs:
             # python3 -m pip install ansible
       # attach workspace
       - attach_workspace:
-          at: /tmp      
+          at: /tmp
       - run:
           name: Configure server
           command: |
