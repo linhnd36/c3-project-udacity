@@ -205,7 +205,7 @@ jobs:
             && cp /tmp/workspace/inventory.txt .circleci/ansible/ \
             && cat .circleci/ansible/inventory.txt
             cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
+            ansible-playbook -i inventory.txt configure-server.yml -vvv
      # Here's where you will add some code to rollback on failure
       # - destroy-environment:
       #     description: backend
