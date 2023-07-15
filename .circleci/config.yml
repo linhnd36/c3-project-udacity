@@ -356,7 +356,7 @@ jobs:
       - image: "amazon/aws-cli:latest"
     steps:
       - checkout
-      # Add ssh keys with fingerprint
+      # Add ssh keys with fingerprint 
       - add_ssh_keys: 
           fingerprints:
             - "ef:83:c0:8f:8e:b2:51:ce:b2:f9:f8:b7:b2:c2:8d:e2"
