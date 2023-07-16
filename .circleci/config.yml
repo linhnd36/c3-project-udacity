@@ -270,6 +270,11 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
+      - run:
+          name: Install OpenSSH client
+          command: |
+              sudo apt-get update && \
+              sudo apt-get install -y openssh-client
       - restore_cache:
           keys: [run-migrations]
       - run:
