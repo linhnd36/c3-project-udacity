@@ -239,6 +239,7 @@ jobs:
             rpm -ivh epel-release-7-14.noarch.rpm
             yum clean expire-cache
             yum install -y ansible python3 tar gzip
+            yum install openssh-clients -y
             # python3 -m pip -V
             # curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
             # python3 get-pip.py --user
