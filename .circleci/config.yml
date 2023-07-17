@@ -480,6 +480,42 @@ jobs:
           description: frontend
           stack-name: "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" 
 
+  cleanup:
+    docker:
+      # Docker image here
+      - image: "amazon/aws-cli:latest"
+    steps:
+      # Checkout code from git
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            yum install -y wget tar gzip
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: Get old stack workflow id and remove old stacks and file
+          command: |
+            # your code here
+            export OldWorkflowID=$(cat /tmp/workspace/old-workflow-id.txt)
+            echo OldWorkflowID: "${OldWorkflowID}"
+            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
+            # export STACKS=[] 
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+            --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) #put the list of stacks here
+            echo Stack names: "${STACKS[@]}"
+            if [[ ! -z "${OldWorkflowID}" ]]
+            then
+              if [[ "${STACKS[@]}" =~ .*"${OldWorkflowID}".* ]]
+              then
+                # your code here
+                aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+                aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+                aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              fi
+            fi
+
 workflows:
   default:
     jobs:
@@ -510,3 +546,5 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
