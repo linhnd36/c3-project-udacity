@@ -371,6 +371,7 @@ jobs:
             rpm -ivh epel-release-7-14.noarch.rpm
             yum clean expire-cache
             yum install -y ansible python3 tar gzip
+            yum install openssh-clients -y
             ansible --version
       - attach_workspace:
           at: /tmp
