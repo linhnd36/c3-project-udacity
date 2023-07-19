@@ -2,10 +2,4 @@
 https://github.com/linhnd36/c3-project-udacity
 
 [URL02]
-http://udapeople-d2bb1ac.s3-website-us-east-1.amazonaws.com
-
-[URL03]
-
-[URL04]
-
-[URL05]
+http://de1duy1e9ucay.cloudfront.net/#/employees
