@@ -2,4 +2,4 @@
 https://github.com/linhnd36/c3-project-udacity
 
 [URL02]
-http://d2lhsf5mk2rq5b.cloudfront.net/
+http://d13krx0l7d2aek.cloudfront.net/#/employees
